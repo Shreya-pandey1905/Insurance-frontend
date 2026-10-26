@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -122,21 +122,36 @@ export class ProductFormComponent implements OnInit {
     status: 'Active'
   };
 
-  constructor(private productService: ProductService, private router: Router) {}
+  constructor(
+    private productService: ProductService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.productService.getAllCategories().subscribe({
-      next: (data) => this.categories = data,
-      error: () => this.errorMsg = 'Failed to load categories.'
+      next: (data) => {
+        this.categories = data || [];
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to load categories.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
   save() {
     this.saving = true;
     this.errorMsg = '';
+    this.cdr.markForCheck();
     this.productService.createProduct(this.product).subscribe({
       next: (saved) => this.router.navigate(['/products', saved.productId]),
-      error: (err) => { this.errorMsg = err.error?.message || 'Failed to save product.'; this.saving = false; }
+      error: (err) => {
+        this.errorMsg = err.error?.message || 'Failed to save product.';
+        this.saving = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 

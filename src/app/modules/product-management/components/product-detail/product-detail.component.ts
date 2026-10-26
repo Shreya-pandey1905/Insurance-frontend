@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -183,7 +183,12 @@ export class ProductDetailComponent implements OnInit {
   newRider: Rider = { riderName: '', riderDescription: '', riderPremium: 0, status: 'Active' };
   newCommission: ProductCommission = { firstYearCommission: 0, renewalCommission: 0, branchCommission: 0 };
 
-  constructor(private route: ActivatedRoute, private productService: ProductService, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private productService: ProductService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.productId = Number(this.route.snapshot.paramMap.get('id'));
@@ -192,33 +197,76 @@ export class ProductDetailComponent implements OnInit {
 
   loadAll() {
     this.loading = true;
+    this.cdr.markForCheck();
     this.productService.getProductById(this.productId).subscribe({
-      next: (data) => { this.product = data; this.loading = false; },
-      error: () => { this.errorMsg = 'Product not found.'; this.loading = false; }
+      next: (data) => {
+        this.product = data;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Product not found.';
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
     });
-    this.productService.getCoverages(this.productId).subscribe({ next: (d) => this.coverages = d, error: () => {} });
-    this.productService.getProductRiders(this.productId).subscribe({ next: (d) => this.riders = d, error: () => {} });
-    this.productService.getCommission(this.productId).subscribe({ next: (d) => this.commission = d, error: () => {} });
+    this.productService.getCoverages(this.productId).subscribe({
+      next: (d) => { this.coverages = d; this.cdr.markForCheck(); },
+      error: () => {}
+    });
+    this.productService.getProductRiders(this.productId).subscribe({
+      next: (d) => { this.riders = d; this.cdr.markForCheck(); },
+      error: () => {}
+    });
+    this.productService.getCommission(this.productId).subscribe({
+      next: (d) => { this.commission = d; this.cdr.markForCheck(); },
+      error: () => {}
+    });
   }
 
   addCoverage() {
     this.productService.addCoverage(this.productId, this.newCoverage).subscribe({
-      next: () => { this.successMsg = 'Coverage added.'; this.showCoverageForm = false; this.loadAll(); this.newCoverage = { coverageName: '', minimumCoverage: 0, maximumCoverage: 0, waitingPeriodDays: 0, deductibleAmount: 0 }; },
-      error: () => this.errorMsg = 'Failed to add coverage.'
+      next: () => {
+        this.successMsg = 'Coverage added.';
+        this.showCoverageForm = false;
+        this.newCoverage = { coverageName: '', minimumCoverage: 0, maximumCoverage: 0, waitingPeriodDays: 0, deductibleAmount: 0 };
+        this.cdr.markForCheck();
+        this.loadAll();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to add coverage.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
   addRider() {
     this.productService.addRider(this.productId, this.newRider).subscribe({
-      next: () => { this.successMsg = 'Rider added.'; this.showRiderForm = false; this.loadAll(); this.newRider = { riderName: '', riderDescription: '', riderPremium: 0, status: 'Active' }; },
-      error: () => this.errorMsg = 'Failed to add rider.'
+      next: () => {
+        this.successMsg = 'Rider added.';
+        this.showRiderForm = false;
+        this.newRider = { riderName: '', riderDescription: '', riderPremium: 0, status: 'Active' };
+        this.cdr.markForCheck();
+        this.loadAll();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to add rider.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
   saveCommission() {
     this.productService.saveCommission(this.productId, this.newCommission).subscribe({
-      next: (d) => { this.commission = d; this.successMsg = 'Commission saved.'; },
-      error: () => this.errorMsg = 'Failed to save commission.'
+      next: (d) => {
+        this.commission = d;
+        this.successMsg = 'Commission saved.';
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to save commission.';
+        this.cdr.markForCheck();
+      }
     });
   }
 }

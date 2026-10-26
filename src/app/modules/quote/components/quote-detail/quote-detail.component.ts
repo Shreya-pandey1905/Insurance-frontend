@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { QuoteService } from '../../../../core/services/quote.service';
@@ -113,7 +113,12 @@ export class QuoteDetailComponent implements OnInit {
   successMsg = '';
   errorMsg = '';
 
-  constructor(private route: ActivatedRoute, private quoteService: QuoteService, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private quoteService: QuoteService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.quoteId = Number(this.route.snapshot.paramMap.get('id'));
@@ -122,44 +127,96 @@ export class QuoteDetailComponent implements OnInit {
 
   loadAll() {
     this.loading = true;
+    this.cdr.markForCheck();
     this.quoteService.getQuoteById(this.quoteId).subscribe({
-      next: (d) => { this.quote = d; this.loading = false; },
-      error: () => { this.errorMsg = 'Quote not found.'; this.loading = false; }
+      next: (d) => {
+        this.quote = d;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Quote not found.';
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
     });
     this.loadPremium();
     this.loadHistory();
   }
 
   loadPremium() {
-    this.quoteService.getPremium(this.quoteId).subscribe({ next: (d) => this.premium = d, error: () => {} });
+    this.quoteService.getPremium(this.quoteId).subscribe({
+      next: (d) => {
+        this.premium = d;
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
   }
 
   loadHistory() {
-    this.quoteService.getQuoteHistory(this.quoteId).subscribe({ next: (d) => this.history = d, error: () => {} });
+    this.quoteService.getQuoteHistory(this.quoteId).subscribe({
+      next: (d) => {
+        this.history = d;
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
   }
 
   calculatePremium() {
     this.processing = true;
+    this.cdr.markForCheck();
     this.quoteService.calculatePremium(this.quoteId).subscribe({
-      next: (d) => { this.premium = d; this.successMsg = 'Premium calculated!'; this.processing = false; this.loadHistory(); },
-      error: () => { this.errorMsg = 'Failed to calculate premium.'; this.processing = false; }
+      next: (d) => {
+        this.premium = d;
+        this.successMsg = 'Premium calculated!';
+        this.processing = false;
+        this.loadHistory();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to calculate premium.';
+        this.processing = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 
   approve() {
     this.processing = true;
+    this.cdr.markForCheck();
     this.quoteService.approveQuote(this.quoteId).subscribe({
-      next: () => { this.successMsg = 'Quote Approved!'; this.processing = false; this.loadAll(); },
-      error: () => { this.errorMsg = 'Failed to approve.'; this.processing = false; }
+      next: () => {
+        this.successMsg = 'Quote Approved!';
+        this.processing = false;
+        this.loadAll();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to approve.';
+        this.processing = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 
   reject() {
     if (confirm('Are you sure you want to reject this quote?')) {
       this.processing = true;
+      this.cdr.markForCheck();
       this.quoteService.rejectQuote(this.quoteId).subscribe({
-        next: () => { this.successMsg = 'Quote Rejected.'; this.processing = false; this.loadAll(); },
-        error: () => { this.errorMsg = 'Failed to reject.'; this.processing = false; }
+        next: () => {
+          this.successMsg = 'Quote Rejected.';
+          this.processing = false;
+          this.loadAll();
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.errorMsg = 'Failed to reject.';
+          this.processing = false;
+          this.cdr.markForCheck();
+        }
       });
     }
   }
@@ -167,9 +224,19 @@ export class QuoteDetailComponent implements OnInit {
   convert() {
     if (confirm('Convert this quote to a Policy?')) {
       this.processing = true;
+      this.cdr.markForCheck();
       this.quoteService.convertQuote(this.quoteId).subscribe({
-        next: () => { this.successMsg = 'Quote converted to Policy!'; this.processing = false; this.loadAll(); },
-        error: () => { this.errorMsg = 'Failed to convert.'; this.processing = false; }
+        next: () => {
+          this.successMsg = 'Quote converted to Policy!';
+          this.processing = false;
+          this.loadAll();
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.errorMsg = 'Failed to convert.';
+          this.processing = false;
+          this.cdr.markForCheck();
+        }
       });
     }
   }

@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -81,19 +81,41 @@ export class QuoteFormComponent implements OnInit {
     premiumFrequencyId: 0
   };
 
-  constructor(private quoteService: QuoteService, private productService: ProductService, private router: Router) {}
+  constructor(
+    private quoteService: QuoteService,
+    private productService: ProductService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
-    this.productService.getAllProducts().subscribe({ next: (d) => this.products = d.filter(p => p.status === 'Active'), error: () => {} });
-    this.productService.getAllFrequencies().subscribe({ next: (d) => this.frequencies = d.filter(f => f.status === 'Active'), error: () => {} });
+    this.productService.getAllProducts().subscribe({
+      next: (d) => {
+        this.products = (d || []).filter(p => p.status === 'Active');
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+    this.productService.getAllFrequencies().subscribe({
+      next: (d) => {
+        this.frequencies = (d || []).filter(f => f.status === 'Active');
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
   }
 
   save() {
     this.saving = true;
     this.errorMsg = '';
+    this.cdr.markForCheck();
     this.quoteService.createQuote(this.quote).subscribe({
       next: (saved) => this.router.navigate(['/quotes', saved.quoteId]),
-      error: (err) => { this.errorMsg = err.error?.message || 'Failed to generate quote.'; this.saving = false; }
+      error: (err) => {
+        this.errorMsg = err.error?.message || 'Failed to generate quote.';
+        this.saving = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 

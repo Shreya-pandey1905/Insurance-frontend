@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -231,7 +231,11 @@ export class CaseDetailComponent implements OnInit {
   approveForm: any = { approvedBy: 0, remarks: '' };
   rejectForm: any = { approvedBy: 0, rejectionReason: '' };
 
-  constructor(private route: ActivatedRoute, private uwService: UnderwritingService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private uwService: UnderwritingService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.uwId = Number(this.route.snapshot.paramMap.get('id'));
@@ -240,15 +244,56 @@ export class CaseDetailComponent implements OnInit {
 
   loadAll() {
     this.loading = true;
+    this.cdr.markForCheck();
     this.uwService.getCaseById(this.uwId).subscribe({
-      next: (d) => { this.uwCase = d; this.loading = false; },
-      error: () => { this.errorMsg = 'Case not found.'; this.loading = false; }
+      next: (d) => {
+        this.uwCase = d;
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Case not found.';
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
     });
-    this.uwService.getMedicalDetails(this.uwId).subscribe({ next: (d) => { this.medical = d; this.medForm = { ...d }; }, error: () => {} });
-    this.uwService.getFinancialDetails(this.uwId).subscribe({ next: (d) => { this.financial = d; this.finForm = { ...d }; }, error: () => {} });
-    this.uwService.getRiskScore(this.uwId).subscribe({ next: (d) => this.riskScore = d, error: () => {} });
-    this.uwService.getDecision(this.uwId).subscribe({ next: (d) => this.decision = d, error: () => {} });
-    this.uwService.getAuditLogs(this.uwId).subscribe({ next: (d) => this.auditLogs = d, error: () => {} });
+    this.uwService.getMedicalDetails(this.uwId).subscribe({
+      next: (d) => {
+        this.medical = d;
+        this.medForm = { ...d };
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+    this.uwService.getFinancialDetails(this.uwId).subscribe({
+      next: (d) => {
+        this.financial = d;
+        this.finForm = { ...d };
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+    this.uwService.getRiskScore(this.uwId).subscribe({
+      next: (d) => {
+        this.riskScore = d;
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+    this.uwService.getDecision(this.uwId).subscribe({
+      next: (d) => {
+        this.decision = d;
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+    this.uwService.getAuditLogs(this.uwId).subscribe({
+      next: (d) => {
+        this.auditLogs = d;
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
   }
 
   saveMedical() {
@@ -256,8 +301,16 @@ export class CaseDetailComponent implements OnInit {
       ? this.uwService.updateMedicalDetails(this.uwId, this.medForm)
       : this.uwService.saveMedicalDetails(this.uwId, this.medForm);
     obs.subscribe({
-      next: (d) => { this.medical = d; this.successMsg = 'Medical details saved.'; this.showMedicalForm = false; },
-      error: () => this.errorMsg = 'Failed to save medical details.'
+      next: (d) => {
+        this.medical = d;
+        this.successMsg = 'Medical details saved.';
+        this.showMedicalForm = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to save medical details.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -266,32 +319,72 @@ export class CaseDetailComponent implements OnInit {
       ? this.uwService.updateFinancialDetails(this.uwId, this.finForm)
       : this.uwService.saveFinancialDetails(this.uwId, this.finForm);
     obs.subscribe({
-      next: (d) => { this.financial = d; this.successMsg = 'Financial details saved.'; this.showFinancialForm = false; },
-      error: () => this.errorMsg = 'Failed to save financial details.'
+      next: (d) => {
+        this.financial = d;
+        this.successMsg = 'Financial details saved.';
+        this.showFinancialForm = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to save financial details.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
   calculateRisk() {
     this.processing = true;
+    this.cdr.markForCheck();
     this.uwService.calculateRiskScore(this.uwId).subscribe({
-      next: (d) => { this.riskScore = d; this.successMsg = 'Risk score calculated! Premium updated automatically.'; this.processing = false; },
-      error: () => { this.errorMsg = 'Failed to calculate risk. Make sure medical and financial details are saved first.'; this.processing = false; }
+      next: (d) => {
+        this.riskScore = d;
+        this.successMsg = 'Risk score calculated! Premium updated automatically.';
+        this.processing = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to calculate risk. Make sure medical and financial details are saved first.';
+        this.processing = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 
   approve() {
     this.processing = true;
+    this.cdr.markForCheck();
     this.uwService.approveCase(this.uwId, this.approveForm).subscribe({
-      next: () => { this.successMsg = 'Case Approved!'; this.processing = false; this.showApproveForm = false; this.loadAll(); },
-      error: () => { this.errorMsg = 'Failed to approve.'; this.processing = false; }
+      next: () => {
+        this.successMsg = 'Case Approved!';
+        this.processing = false;
+        this.showApproveForm = false;
+        this.loadAll();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to approve.';
+        this.processing = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 
   reject() {
     this.processing = true;
+    this.cdr.markForCheck();
     this.uwService.rejectCase(this.uwId, this.rejectForm).subscribe({
-      next: () => { this.successMsg = 'Case Rejected.'; this.processing = false; this.showRejectForm = false; this.loadAll(); },
-      error: () => { this.errorMsg = 'Failed to reject.'; this.processing = false; }
+      next: () => {
+        this.successMsg = 'Case Rejected.';
+        this.processing = false;
+        this.showRejectForm = false;
+        this.loadAll();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.errorMsg = 'Failed to reject.';
+        this.processing = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 }

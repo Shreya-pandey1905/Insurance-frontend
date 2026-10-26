@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -65,22 +65,34 @@ export class CaseFormComponent implements OnInit {
     private route: ActivatedRoute,
     private uwService: UnderwritingService,
     private productService: ProductService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     // If navigated from Quote Detail with quoteId in query params
     const qId = this.route.snapshot.queryParamMap.get('quoteId');
     if (qId) { this.quoteId = Number(qId); }
-    this.productService.getAllProducts().subscribe({ next: (d) => this.products = d, error: () => {} });
+    this.productService.getAllProducts().subscribe({
+      next: (d) => {
+        this.products = d || [];
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
   }
 
   save() {
     this.saving = true;
     this.errorMsg = '';
+    this.cdr.markForCheck();
     this.uwService.createCase({ quoteId: this.quoteId, customerId: this.customerId, productId: this.productId }).subscribe({
       next: (saved) => this.router.navigate(['/underwriting', saved.underwritingId]),
-      error: (err) => { this.errorMsg = err.error?.message || 'Failed to create case.'; this.saving = false; }
+      error: (err) => {
+        this.errorMsg = err.error?.message || 'Failed to create case.';
+        this.saving = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 
